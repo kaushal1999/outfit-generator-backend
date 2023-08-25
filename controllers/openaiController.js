@@ -3,8 +3,10 @@ dotenv.config();
 import mongoose from "mongoose";
 
 import User from "../models/userModel.js";
-
-import { OpenAI } from "langchain/llms/openai";
+import OpenAI from "openai";
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
+});
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { ConversationSummaryBufferMemory } from "langchain/memory";
 import { ConversationChain } from "langchain/chains";
@@ -17,7 +19,7 @@ import {
 
 const chatPrompt = ChatPromptTemplate.fromPromptMessages([
   SystemMessagePromptTemplate.fromTemplate(
-    "I want you to act as an fashion outfit recommender for that recommends personalized fashion outfits, in a natural conversational way. The outfit recommender should leverage fashion trends to offer tailored outfit recommendations. The recommended  outfits should be complete and well-coordinated, including clothing, accessories, and footwear etc. The recommender should consider factors such as the user's body type, occasion, and regional and age preferences to offer appropriate and versatile outfit suggestions. Users should also be able to interact with the outfit recommender to give it feedback in terms of what they like, dont like and be able to tweak the outfits in the manner of a conversation.The ultimate goal of the fashion outfit recommender is to enhance the user's experience by providing them with personalized, trendy, and cohesive outfit ideas. Your recommendations should be formatted in such a way that it is easy to read and keep it very crisp. The following is a conversation between an user & you. You should provide specific details from its context. The conversation also contains user's details."
+    "I want you to act as a fashion outfit recommender who recommends personalized fashion. The outfit recommender should leverage fashion trends to offer tailored outfit recommendations. The recommended outfits should be complete and well-coordinated, including clothing, accessories, footwear etc. The recommender should consider factors such as the user's body type, occasion, and regional and age preferences to offer appropriate and versatile outfit suggestions. Users should also be able to interact with the outfit recommender to give feedback on what they like and don't like. The ultimate goal of the fashion outfit recommender is to enhance the user's experience by providing them with personalized, trendy outfit ideas. Your recommendations should have only one outfit at a time and no other text. The following is a conversation between a user and you. You should provide specific details from its context. The last part of the conversation contains the user's details, starting from formData."
   ),
   new MessagesPlaceholder("history"),
   HumanMessagePromptTemplate.fromTemplate("{input}"),
@@ -25,7 +27,7 @@ const chatPrompt = ChatPromptTemplate.fromPromptMessages([
 
 const model = new ChatOpenAI({ temperature: 0.9, verbose: false });
 
-const chatbotController = async (req, res) => {
+export const chatbotController = async (req, res) => {
   try {
     const { text, id } = req.body;
 
@@ -60,7 +62,7 @@ const chatbotController = async (req, res) => {
         { input: userPref },
         {
           output:
-            "Understood! I have saved the user details you provided for future reference as a personalized outfit suggester. When you have specific fashion-related queries or need personalized outfit suggestions in the future, feel free to ask, and I'll use these details to provide tailored recommendations.",
+            "Understood! I have saved the user details you provided for future reference.",
         }
       );
     }
@@ -82,19 +84,37 @@ const chatbotController = async (req, res) => {
 
       user.outputMessages = outputMessages;
 
-      try {
-        const updatedUser = await user.save();
-        return res.status(200).send(result);
-      } catch (error) {
-        res.status(500).json(err);
-      }
+      const updatedUser = await user.save();
+      return res.status(200).send(result);
     }
   } catch (err) {
-    console.log(err);
-    return res.status(404).json({
+    // console.log(err);
+    return res.status(500).json({
       message: err.message,
     });
   }
 };
 
-export default chatbotController;
+export const imageController = async (req, res) => {
+  try {
+    const { last_response } = req.body;
+    // console.log(outfits);
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: 'user', content: `${last_response} From the above text, extract text that can be given to a text-to-image generator for outfit generation. Your response should only contain the outfit details and no other text, not even the heading for details.` }],
+      model: 'gpt-3.5-turbo',
+    });
+    // console.log(completion.choices[0].message.content);
+    const response = await openai.images.generate({
+      prompt: completion.choices[0].message.content,
+      n: 1,
+      size: "512x512",
+    });
+    const image_url = response.data[0].url;
+    return res.status(200).send(image_url);
+  } catch (error) {
+     console.log(error);
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};

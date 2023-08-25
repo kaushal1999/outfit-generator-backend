@@ -30,7 +30,7 @@
     "mongoose": "^6.9.2",
     "morgan": "^1.10.0",
     "nodemon": "^2.0.22",
-    "openai": "^3.3.0",
+    "openai": "^4.2.0",
     "prop-types": "^15.8.1"
   },
   "type": "module",
