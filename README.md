@@ -1,3 +1,6 @@
+Live Project link: https://outfit-generator-genai.netlify.app/
+
+Link to frontend code: https://github.com/kaushal1999/outfit-generator-frontend
 
 ### Personalized Outfit generation using Large Language Model & Langchain:
 
@@ -27,15 +30,14 @@ Node.js v18.17.0
 ## Installation Steps:
 1. Either clone the repo or download it as a zip. If using zip, extract it in a folder and open the extracted files in a code editor like vsCode.
 
-### server-side
-2. install the required packages using npm install
+### Backend side
+2. Install the required packages using npm install
 3. In the .env file, add the openAi api key. Instructions and key for the same are given are the .env file itself.
 4. Run the server using the command npm start
 
-### client side
-5. run "cd client" to change current directory to client
-6. install the required packages using npm install
-7. Run npm start
+### Frontend side
+5. Install the required packages using npm install
+6. Run npm start
 
 ## Using the App
 1) Create a new user account
